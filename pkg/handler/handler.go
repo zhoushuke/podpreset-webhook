@@ -72,7 +72,7 @@ func (a *PodPresetMutator) Handle(ctx context.Context, req admission.Request) ad
 		return admission.Errored(http.StatusInternalServerError, fmt.Errorf("Error retrieving ist of PodPresets: %v", err))
 	}
 
-	matchingPPs, err := filterPodPresets(*podPresetList, pod)
+	matchingPPs, err := filterPodPresets(logger, *podPresetList, pod)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, fmt.Errorf("filtering pod presets failed: %v", err))
 	}
@@ -116,13 +116,31 @@ func (a *PodPresetMutator) InjectDecoder(d *admission.Decoder) error {
 }
 
 // filterPodPresets returns list of PodPresets which match given Pod.
-func filterPodPresets(list redhatcopv1alpha1.PodPresetList, pod *corev1.Pod) ([]*redhatcopv1alpha1.PodPreset, error) {
+func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, pod *corev1.Pod) ([]*redhatcopv1alpha1.PodPreset, error) {
 	var matchingPPs []*redhatcopv1alpha1.PodPreset
 
+	logger.Info(pod.GetName())
+
 	for _, pp := range list.Items {
+
 		selector, err := metav1.LabelSelectorAsSelector(&pp.Spec.Selector)
 		if err != nil {
 			return nil, fmt.Errorf("label selector conversion failed: %v for selector: %v", pp.Spec.Selector, err)
+		}
+		logger.Info(selector.String())
+		logger.Info(labels.Set(pod.Labels).String())
+
+		podnamerequiredlabel := make(map[string]string)
+		podnamerequiredlabel["podnamerequired"] = "always"
+		if selector.Matches(labels.Set(podnamerequiredlabel)) {
+			logger.Info("podnamerequiredlabel always")
+			podnamelabel := make(map[string]string)
+			podnamelabel["podname"] = pod.GetName()
+			if !selector.Matches(labels.Set(podnamelabel)) {
+				logger.Info("selector not found ")
+				continue
+			}
+			logger.Info("selector found ")
 		}
 
 		// check if the pod labels match the selector
