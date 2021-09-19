@@ -1,7 +1,9 @@
 # Current Operator version
-VERSION ?= 0.0.1
+VERSION ?= 0.0.20
+
 # Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+IMAGE_TAG_BASE ?= jankul02/podpreset
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -11,10 +13,11 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-# Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+
+IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,crdVersions=v1beta1,preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd:trivialVersions=true,crdVersions=v1,preserveUnknownFields=false"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

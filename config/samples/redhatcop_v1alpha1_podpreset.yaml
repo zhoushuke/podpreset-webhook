@@ -4,8 +4,10 @@ metadata:
   name: frontend
 spec:
   env:
-    - name: FOO
+    - name: HOO
       value: bar
   selector:
     matchLabels:
       role: frontend
+      podnamerequired: nginx0-0
+

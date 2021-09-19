@@ -130,21 +130,24 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 		logger.Info(selector.String())
 		logger.Info(labels.Set(pod.Labels).String())
 
-		podnamerequiredlabel := make(map[string]string)
-		podnamerequiredlabel["podnamerequired"] = "always"
-		if selector.Matches(labels.Set(podnamerequiredlabel)) {
-			logger.Info("podnamerequiredlabel always")
-			podnamelabel := make(map[string]string)
-			podnamelabel["podname"] = pod.GetName()
-			if !selector.Matches(labels.Set(podnamelabel)) {
-				logger.Info("selector not found ")
+		podnamerequiredvalue, found := selector.RequiresExactMatch("podnamerequired")
+		logger.Info("RequiresExactMatch")
+
+		if found {
+			logger.Info("RequiresExactMatch  podnamerequired  found")
+			logger.Info(podnamerequiredvalue)
+			if podnamerequiredvalue != pod.GetName() {
+				logger.Info("RequiresExactMatch for podnamerequiredvalue not mtching")
 				continue
 			}
-			logger.Info("selector found ")
+			logger.Info("RequiresExactMatch matching")
 		}
 
+		lbls := pod.Labels
+		lbls["podnamerequired"] = pod.GetName()
+
 		// check if the pod labels match the selector
-		if !selector.Matches(labels.Set(pod.Labels)) {
+		if !selector.Matches(labels.Set(lbls)) {
 			continue
 		}
 		matchingPPs = append(matchingPPs, &pp)
