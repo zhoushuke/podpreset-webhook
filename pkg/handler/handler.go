@@ -153,17 +153,25 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 			logger.Info("!selector.Matches(labels.Set(lbls)=====> next loop")
 			continue
 		}
-		logger.Info("***** found !!! for pod=" + pod.GetName() + "  PP=" + pp.Name)
 
 		matchingPPs = append(matchingPPs, &pp)
+		logger.Info("***** found !!! for pod=" + pod.GetName() + "  PP=" + pp.Name)
+		logger.Info("$$$$$$$$$$$$$$$$$$ printing list what found sofar for pod=" + pod.GetName() + "  PP=" + pp.Name)
+		if len(matchingPPs) == 0 {
+			logger.Info("$$$$$$$ sofar no  preset for pod=" + pod.GetName())
+		} else {
+			for _, ppo := range matchingPPs {
+				logger.Info("$$$$$$$$$ a preset sofar found for pod=" + pod.GetName() + " is name=" + ppo.GetName())
+			}
+		}
+		logger.Info("EOF$$$$$$$$$$$$$$$$$$ printing list what found sofar for pod=" + pod.GetName())
+		break
 	}
 	if len(matchingPPs) == 0 {
 		logger.Info("######### no final preset for pod=" + pod.GetName())
 	} else {
-		presetNames := make([]string, len(matchingPPs))
-		for i, pp := range matchingPPs {
-			presetNames[i] = pp.GetName()
-			logger.Info("##############final preset for pod=" + pod.GetName() + " is name=" + pp.GetName())
+		for _, ppr := range matchingPPs {
+			logger.Info("##############final preset for pod=" + pod.GetName() + " is name=" + ppr.GetName())
 		}
 
 	}
