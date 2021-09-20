@@ -84,6 +84,7 @@ func (a *PodPresetMutator) Handle(ctx context.Context, req admission.Request) ad
 	presetNames := make([]string, len(matchingPPs))
 	for i, pp := range matchingPPs {
 		presetNames[i] = pp.GetName()
+		logger.Info("presetName[i] of pp=" + pp.GetName() + " is=" + presetNames[i])
 	}
 
 	// detect merge conflict
@@ -119,7 +120,7 @@ func (a *PodPresetMutator) InjectDecoder(d *admission.Decoder) error {
 func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, pod *corev1.Pod) ([]*redhatcopv1alpha1.PodPreset, error) {
 	var matchingPPs []*redhatcopv1alpha1.PodPreset
 
-	logger.Info(pod.GetName())
+	logger.Info("pod.GetName()=" + pod.GetName())
 
 	for _, pp := range list.Items {
 
@@ -127,30 +128,44 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 		if err != nil {
 			return nil, fmt.Errorf("label selector conversion failed: %v for selector: %v", pp.Spec.Selector, err)
 		}
-		logger.Info(selector.String())
-		logger.Info(labels.Set(pod.Labels).String())
+		logger.Info("selector.String()=" + selector.String())
+		logger.Info("labels.Set(pod.Labels).String()=" + labels.Set(pod.Labels).String())
 
 		podnamerequiredvalue, found := selector.RequiresExactMatch("podnamerequired")
-		logger.Info("RequiresExactMatch")
+		logger.Info("checking if found RequiresExactMatch podnamerequired")
 
 		if found {
 			logger.Info("RequiresExactMatch  podnamerequired  found")
-			logger.Info(podnamerequiredvalue)
+			logger.Info("podnamerequiredvalue=" + podnamerequiredvalue)
 			if podnamerequiredvalue != pod.GetName() {
-				logger.Info("RequiresExactMatch for podnamerequiredvalue not mtching")
+				logger.Info("RequiresExactMatch for podnamerequiredvalue not matching pod:" + pod.GetName() + "!=" + podnamerequiredvalue + "=====> next loop")
 				continue
 			}
-			logger.Info("RequiresExactMatch matching")
+			logger.Info("podnamerequiredvalue matching pod:" + pod.GetName() + "==" + podnamerequiredvalue)
 		}
 
 		lbls := pod.Labels
 		lbls["podnamerequired"] = pod.GetName()
+		logger.Info("labels.Set(lbls).String()=" + labels.Set(lbls).String())
 
 		// check if the pod labels match the selector
 		if !selector.Matches(labels.Set(lbls)) {
+			logger.Info("!selector.Matches(labels.Set(lbls)=====> next loop")
 			continue
 		}
+		logger.Info("***** found !!! for pod=" + pod.GetName() + "  PP=" + pp.Name)
+
 		matchingPPs = append(matchingPPs, &pp)
+	}
+	if len(matchingPPs) == 0 {
+		logger.Info("######### no final preset for pod=" + pod.GetName())
+	} else {
+		presetNames := make([]string, len(matchingPPs))
+		for i, pp := range matchingPPs {
+			presetNames[i] = pp.GetName()
+			logger.Info("##############final preset for pod=" + pod.GetName() + " is name=" + pp.GetName())
+		}
+
 	}
 	return matchingPPs, nil
 }
