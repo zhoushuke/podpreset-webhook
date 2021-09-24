@@ -135,37 +135,30 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 		logger.Info("checking if found RequiresExactMatch podnamerequired")
 
 		if found {
-			logger.Info("RequiresExactMatch  podnamerequired  found")
 			logger.Info("podnamerequiredvalue=" + podnamerequiredvalue)
 			if podnamerequiredvalue != pod.GetName() {
-				logger.Info("RequiresExactMatch for podnamerequiredvalue not matching pod:" + pod.GetName() + "!=" + podnamerequiredvalue + "=====> next loop")
+				logger.Info("podnamerequiredvalue not matching the pod name:" + pod.GetName() + "!=" + podnamerequiredvalue + "=====> next loop")
+				continue
+			} else {
+				logger.Info("podnamerequiredvalue matching pod:" + pod.GetName() + "==" + podnamerequiredvalue)
+				// check if general matching
+				lbls := pod.Labels
+				lbls["podnamerequired"] = pod.GetName()
+				logger.Info("labels.Set(lbls).String()=" + labels.Set(lbls).String())
+				// check if the pod labels match the selector
+				if !selector.Matches(labels.Set(lbls)) {
+					logger.Info("!selector.Matches(labels.Set(lbls)=====> next loop")
+					continue
+				}
+			}
+		} else {
+			// check if the pod labels match the selector (generic case, no requirements on pod name)
+			if !selector.Matches(labels.Set(pod.Labels)) {
+				logger.Info("!selector.Matches(labels.Set(lbls)=====> next loop")
 				continue
 			}
-			logger.Info("podnamerequiredvalue matching pod:" + pod.GetName() + "==" + podnamerequiredvalue)
 		}
-
-		lbls := pod.Labels
-		lbls["podnamerequired"] = pod.GetName()
-		logger.Info("labels.Set(lbls).String()=" + labels.Set(lbls).String())
-
-		// check if the pod labels match the selector
-		if !selector.Matches(labels.Set(lbls)) {
-			logger.Info("!selector.Matches(labels.Set(lbls)=====> next loop")
-			continue
-		}
-
 		matchingPPs = append(matchingPPs, &pp)
-		logger.Info("***** found !!! for pod=" + pod.GetName() + "  PP=" + pp.Name)
-		logger.Info("$$$$$$$$$$$$$$$$$$ printing list what found sofar for pod=" + pod.GetName() + "  PP=" + pp.Name)
-		if len(matchingPPs) == 0 {
-			logger.Info("$$$$$$$ sofar no  preset for pod=" + pod.GetName())
-		} else {
-			for _, ppo := range matchingPPs {
-				logger.Info("$$$$$$$$$ a preset sofar found for pod=" + pod.GetName() + " is name=" + ppo.GetName())
-			}
-		}
-		logger.Info("EOF$$$$$$$$$$$$$$$$$$ printing list what found sofar for pod=" + pod.GetName())
-		break
 	}
 	if len(matchingPPs) == 0 {
 		logger.Info("######### no final preset for pod=" + pod.GetName())
@@ -173,7 +166,6 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 		for _, ppr := range matchingPPs {
 			logger.Info("##############final preset for pod=" + pod.GetName() + " is name=" + ppr.GetName())
 		}
-
 	}
 	return matchingPPs, nil
 }
