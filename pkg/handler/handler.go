@@ -122,7 +122,7 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 
 	logger.Info("pod.GetName()=" + pod.GetName())
 
-	for _, pp := range list.Items {
+	for i, pp := range list.Items {
 
 		selector, err := metav1.LabelSelectorAsSelector(&pp.Spec.Selector)
 		if err != nil {
@@ -158,7 +158,7 @@ func filterPodPresets(logger logr.Logger, list redhatcopv1alpha1.PodPresetList, 
 				continue
 			}
 		}
-		matchingPPs = append(matchingPPs, &pp)
+		matchingPPs = append(matchingPPs, &list.Items[i])
 	}
 	if len(matchingPPs) == 0 {
 		logger.Info("######### no final preset for pod=" + pod.GetName())
